@@ -9,7 +9,10 @@ export interface RouteState {
 export function parseHash(hash: string): RouteState {
   const clean = hash.replace(/^#\/?/, '');
   const [routePart, queryPart] = clean.split('?');
-  const segments = (routePart || '').split('/').filter(Boolean);
+  let activeSegments = (routePart || '').split('/').filter(Boolean);
+  if (activeSegments[0] === 'A-memories-') {
+    activeSegments = activeSegments.slice(1);
+  }
 
   const query: Record<string, string> = {};
   if (queryPart) {
@@ -19,19 +22,19 @@ export function parseHash(hash: string): RouteState {
     });
   }
 
-  if (segments.length === 0) {
+  if (activeSegments.length === 0) {
     return { path: '/', query };
   }
 
-  if (segments[0] === 'album' && segments[1]) {
-    return { path: '/album', paramId: decodeURIComponent(segments[1]), query };
+  if (activeSegments[0] === 'album' && activeSegments[1]) {
+    return { path: '/album', paramId: decodeURIComponent(activeSegments[1]), query };
   }
 
-  if (segments[0] === 'memory' && segments[1]) {
-    return { path: '/memory', paramId: decodeURIComponent(segments[1]), query };
+  if (activeSegments[0] === 'memory' && activeSegments[1]) {
+    return { path: '/memory', paramId: decodeURIComponent(activeSegments[1]), query };
   }
 
-  return { path: `/${segments[0]}`, query };
+  return { path: `/${activeSegments[0]}`, query };
 }
 
 export function useHashRoute() {

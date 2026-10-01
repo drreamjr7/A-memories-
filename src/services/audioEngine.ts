@@ -20,22 +20,27 @@ class AudioEngine {
   }
 
   private initContext() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      this.ctx = new AudioCtx();
-      this.analyser = this.ctx.createAnalyser();
-      this.analyser.fftSize = 64;
-      this.analyser.smoothingTimeConstant = 0.85;
+    if (!this.ctx && typeof window !== 'undefined') {
+      try {
+        const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (!AudioCtx) return;
+        this.ctx = new AudioCtx();
+        this.analyser = this.ctx.createAnalyser();
+        this.analyser.fftSize = 64;
+        this.analyser.smoothingTimeConstant = 0.85;
 
-      this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.setValueAtTime(this.currentVolume, this.ctx.currentTime);
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.setValueAtTime(this.currentVolume, this.ctx.currentTime);
 
-      this.analyser.connect(this.masterGain);
-      this.masterGain.connect(this.ctx.destination);
+        this.analyser.connect(this.masterGain);
+        this.masterGain.connect(this.ctx.destination);
+      } catch (err) {
+        console.warn('AudioContext initialization failed or blocked:', err);
+      }
     }
 
-    if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
     }
   }
 

@@ -68,7 +68,17 @@ const MainApp: React.FC = () => {
 
       {/* Router Viewport */}
       <main className="flex-1 w-full">
-        {route.path === '/' && (
+        {(route.path === '/' ||
+          ![
+            '/albums',
+            '/album',
+            '/memory',
+            '/timeline',
+            '/favorites',
+            '/create',
+            '/settings',
+            '/developer'
+          ].includes(route.path)) && (
           <HomePage navigate={navigate} onOpenPhoto={handleOpenPhoto} />
         )}
 

@@ -19,9 +19,41 @@ export const DEFAULT_SETTINGS: AppSettings = {
   kenBurns: true
 };
 
+// Safe storage wrapper to prevent crashes on Android Chrome / WebView / Incognito
+const safeStorage = {
+  get: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch (e) {
+      console.warn('Storage read restricted:', e);
+    }
+    return null;
+  },
+  set: (key: string, val: string): void => {
+    try {
+      if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+        window.localStorage.setItem(key, val);
+      }
+    } catch (e) {
+      console.warn('Storage write restricted:', e);
+    }
+  },
+  remove: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined' && 'localStorage' in window && window.localStorage) {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.warn('Storage removal restricted:', e);
+    }
+  }
+};
+
 export function getStoredFavorites(): string[] {
   try {
-    const raw = localStorage.getItem(FAVORITES_KEY);
+    const raw = safeStorage.get(FAVORITES_KEY);
     return raw ? JSON.parse(raw) : ['photo-s26-1', 'photo-nw-1'];
   } catch {
     return ['photo-s26-1', 'photo-nw-1'];
@@ -29,16 +61,12 @@ export function getStoredFavorites(): string[] {
 }
 
 export function saveStoredFavorites(ids: string[]): void {
-  try {
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(ids));
-  } catch (e) {
-    console.warn('Failed to save favorites to localStorage', e);
-  }
+  safeStorage.set(FAVORITES_KEY, JSON.stringify(ids));
 }
 
 export function getStoredSettings(): AppSettings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = safeStorage.get(SETTINGS_KEY);
     if (!raw) return DEFAULT_SETTINGS;
     return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
   } catch {
@@ -47,54 +75,39 @@ export function getStoredSettings(): AppSettings {
 }
 
 export function saveStoredSettings(settings: AppSettings): void {
+  safeStorage.set(SETTINGS_KEY, JSON.stringify(settings));
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    // Apply theme attribute to html/body
-    document.documentElement.setAttribute('data-theme', settings.theme);
-  } catch (e) {
-    console.warn('Failed to save settings to localStorage', e);
+    if (typeof document !== 'undefined' && document.documentElement) {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    }
+  } catch {
+    // Ignore DOM styling error if document not ready
   }
 }
 
 export function isIntroSeen(): boolean {
   try {
-    return localStorage.getItem(INTRO_KEY) === 'true';
+    return safeStorage.get(INTRO_KEY) === 'true';
   } catch {
     return false;
   }
 }
 
 export function markIntroSeen(): void {
-  try {
-    localStorage.setItem(INTRO_KEY, 'true');
-  } catch (e) {
-    console.warn(e);
-  }
+  safeStorage.set(INTRO_KEY, 'true');
 }
 
 export function getRecentAlbumId(): string | null {
-  try {
-    return localStorage.getItem(RECENT_ALBUM_KEY);
-  } catch {
-    return null;
-  }
+  return safeStorage.get(RECENT_ALBUM_KEY);
 }
 
 export function setRecentAlbumId(id: string): void {
-  try {
-    localStorage.setItem(RECENT_ALBUM_KEY, id);
-  } catch (e) {
-    console.warn(e);
-  }
+  safeStorage.set(RECENT_ALBUM_KEY, id);
 }
 
 export function resetAllLocalData(): void {
-  try {
-    localStorage.removeItem(FAVORITES_KEY);
-    localStorage.removeItem(SETTINGS_KEY);
-    localStorage.removeItem(INTRO_KEY);
-    localStorage.removeItem(RECENT_ALBUM_KEY);
-  } catch (e) {
-    console.warn(e);
-  }
+  safeStorage.remove(FAVORITES_KEY);
+  safeStorage.remove(SETTINGS_KEY);
+  safeStorage.remove(INTRO_KEY);
+  safeStorage.remove(RECENT_ALBUM_KEY);
 }

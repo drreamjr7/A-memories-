@@ -61,6 +61,12 @@
     --theme-muted: #d97706;
   }
 
+  html,
+  body,
+  #root {
+    min-height: 100%;
+  }
+
   body {
     font-family: var(--font-body);
     background-color: var(--theme-bg);
