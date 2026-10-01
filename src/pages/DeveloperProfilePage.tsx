@@ -127,7 +127,7 @@ export const DeveloperProfilePage: React.FC<DeveloperProfilePageProps> = ({ navi
       {/* LOCAL AUDIO ASSET (/developer_audio.mp3) */}
       <audio
         ref={audioRef}
-        src="/developer_audio.mp3"
+        src={`${import.meta.env.BASE_URL}developer_audio.mp3`}
         loop
         preload="auto"
         onTimeUpdate={() => {
@@ -143,7 +143,7 @@ export const DeveloperProfilePage: React.FC<DeveloperProfilePageProps> = ({ navi
       <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none z-0">
         <video
           ref={videoRef}
-          src="/developer_bg.mp4"
+          src={`${import.meta.env.BASE_URL}developer_bg.mp4`}
           autoPlay
           loop
           muted={isVideoMuted}

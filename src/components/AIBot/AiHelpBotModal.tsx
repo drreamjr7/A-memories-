@@ -3,19 +3,10 @@ import {
   Sparkles,
   X,
   Send,
-  Key,
-  CheckCircle2,
-  AlertCircle,
-  Eye,
-  EyeOff,
-  Bot,
   User,
-  Trash2,
-  RefreshCw,
   Copy,
   Check
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 
 interface Message {
   id: string;
@@ -23,12 +14,6 @@ interface Message {
   text: string;
   timestamp: string;
 }
-
-const API_KEY_STORAGE_KEY = 'lumora_gemini_api_key';
-
-const BOT_SYSTEM_INSTRUCTION = `You are Flora, the AI Botanical Curator and Memory Muse for LUMORA — Memories in Motion.
-You speak with gentle elegance, poetic clarity, and deep knowledge of floriography (the language and symbolism of flowers), fine-art photography, memory journaling, and soundtrack pairing.
-You help users explore the flower collections (Crimson Antique Rose, Midnight Violet Orchid, Golden Alpine Meadow, Pristine White Lotus, Rain Hydrangea, Blush Peony), create poetic album captions, recommend musical moods, and navigate Lumora's cinematic features (Memory Mode, 3D Carousel, Timeline, Fullscreen Lightbox). Keep responses evocative, concise, and helpful.`;
 
 const PRESET_KNOWLEDGE: Record<string, string> = {
   symbolism: `🌸 **Symbolism in Lumora's Floral Gallery:**
@@ -54,20 +39,14 @@ const PRESET_KNOWLEDGE: Record<string, string> = {
 - **3D Memory Carousel**: Rotate through floral collections using mouse drag, mouse wheel, or left/right arrow keys.
 - **Play Memories (Memory Mode)**: Hit Space or click 'Play Memories' for a fullscreen Ken Burns slideshow synced to procedural ambient music.
 - **Create Album**: Upload your own flower photos (JPG, PNG, WEBP) and sound files directly into your browser's private IndexedDB storage.
-- **Timeline**: Browse memories chronologically by month and year.`
+- **Timeline**: Browse memories chronologically by month and year.
+- **About Developer**: View the creator profile and ambient soundtrack on the Developer page.`
 };
 
 export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({
   isOpen,
   onClose
 }) => {
-  const [apiKey, setApiKey] = useState<string>(() => {
-    return localStorage.getItem(API_KEY_STORAGE_KEY) || '';
-  });
-  const [inputKey, setInputKey] = useState<string>('');
-  const [showKeyInput, setShowKeyInput] = useState<boolean>(false);
-  const [showKeySecret, setShowKeySecret] = useState<boolean>(false);
-  const [keyStatus, setKeyStatus] = useState<'none' | 'saved' | 'validating' | 'valid' | 'invalid'>('none');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([
@@ -84,69 +63,10 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (apiKey) {
-      setKeyStatus('saved');
-    }
-  }, [apiKey]);
-
-  useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
   }, [isOpen, messages, isTyping]);
-
-  const handleSaveKey = async () => {
-    const trimmed = inputKey.trim();
-    if (!trimmed) return;
-
-    setKeyStatus('validating');
-    try {
-      // Test the key with gemini-3.8-flash
-      const ai = new GoogleGenAI({
-        apiKey: trimmed,
-        httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-      });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: 'Hello, respond with only: OK'
-      });
-
-      if (response && response.text) {
-        localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
-        setApiKey(trimmed);
-        setKeyStatus('valid');
-        setShowKeyInput(false);
-        setInputKey('');
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `msg-${Date.now()}`,
-            sender: 'bot',
-            text: `✨ **Gemini API Key Connected!** You are now powered by live Google Gemini intelligence for dynamic conversations and custom creative generation.`,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
-      } else {
-        setKeyStatus('invalid');
-      }
-    } catch (err) {
-      console.warn('Key validation failed:', err);
-      // Still allow saving in case of sandbox network restrictions
-      localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
-      setApiKey(trimmed);
-      setKeyStatus('saved');
-      setShowKeyInput(false);
-      setInputKey('');
-    }
-  };
-
-  const handleRemoveKey = () => {
-    localStorage.removeItem(API_KEY_STORAGE_KEY);
-    setApiKey('');
-    setKeyStatus('none');
-    setShowKeyInput(false);
-  };
 
   const sendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
@@ -163,39 +83,7 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
     setInputText('');
     setIsTyping(true);
 
-    // Try Gemini API if key is present
-    if (apiKey) {
-      try {
-        const ai = new GoogleGenAI({
-          apiKey,
-          httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
-        });
-        const res = await ai.models.generateContent({
-          model: 'gemini-3.8-flash',
-          contents: text,
-          config: {
-            systemInstruction: BOT_SYSTEM_INSTRUCTION
-          }
-        });
-
-        const reply = res.text || 'I listened carefully to your thought, but the winds rustled the leaves. Could you rephrase?';
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: reply,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ]);
-        setIsTyping(false);
-        return;
-      } catch (err) {
-        console.warn('Gemini API call failed, falling back to local muse:', err);
-      }
-    }
-
-    // Client-side intelligent fallback response generator
+    // Client-side intelligent botanical curator response generator (zero external API keys)
     setTimeout(() => {
       let reply = '';
       const lower = text.toLowerCase();
@@ -206,10 +94,10 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
         reply = PRESET_KNOWLEDGE.caption;
       } else if (lower.includes('music') || lower.includes('song') || lower.includes('soundtrack') || lower.includes('audio')) {
         reply = PRESET_KNOWLEDGE.soundtrack;
-      } else if (lower.includes('how') || lower.includes('carousel') || lower.includes('feature') || lower.includes('memory mode') || lower.includes('help')) {
+      } else if (lower.includes('how') || lower.includes('carousel') || lower.includes('feature') || lower.includes('memory mode') || lower.includes('help') || lower.includes('developer')) {
         reply = PRESET_KNOWLEDGE.features;
       } else {
-        reply = `🌸 *"In the garden of memory, every blossom has a tale."*\n\nI can share the floriography symbolism of our flowers, generate poetic reflections for your albums, or help you find the perfect ambient soundtrack. Connect your **Gemini API Key** in the header above to unlock limitless custom conversations!`;
+        reply = `🌸 *"In the garden of memory, every blossom has a tale."*\n\nI can share the floriography symbolism of our flowers, generate poetic reflections for your albums, or help you find the perfect ambient soundtrack. Select one of the guidance chips below to explore!`;
       }
 
       setMessages((prev) => [
@@ -222,7 +110,7 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
         }
       ]);
       setIsTyping(false);
-    }, 600);
+    }, 450);
   };
 
   const copyToClipboard = (id: string, text: string) => {
@@ -254,10 +142,10 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-cinematic font-bold text-white tracking-wide">
-                  Flora AI Curator
+                  Flora Curator
                 </h3>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-mono border bg-amber-500/10 border-amber-500/30 text-amber-300">
-                  {apiKey ? 'Gemini 3.8 Flash' : 'Preset Muse'}
+                  Botanical Muse
                 </span>
               </div>
               <p className="text-[11px] text-neutral-400">
@@ -266,90 +154,15 @@ export const AiHelpBotModal: React.FC<{ isOpen: boolean; onClose: () => void }> 
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              className={`p-2 rounded-xl border text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
-                apiKey
-                  ? 'bg-neutral-800/80 border-emerald-500/40 text-emerald-300'
-                  : 'bg-neutral-800/80 border-neutral-700 text-neutral-400 hover:text-white'
-              }`}
-              title="Configure Gemini API Key"
-            >
-              <Key className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{apiKey ? 'Key Set' : 'Paste API Key'}</span>
-            </button>
-
-            <button
-              onClick={onClose}
-              className="p-2 rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-              title="Close Bot"
-              aria-label="Close Bot"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl bg-neutral-800/60 hover:bg-neutral-800 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            title="Close Bot"
+            aria-label="Close Bot"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </header>
-
-        {/* API KEY CONFIGURATION DRAWER */}
-        {showKeyInput && (
-          <div className="p-4 bg-neutral-950 border-b border-white/[0.08] text-xs space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-white flex items-center gap-1.5">
-                <Key className="w-3.5 h-3.5 text-amber-400" />
-                Gemini API Key Configuration
-              </span>
-              {apiKey && (
-                <button
-                  onClick={handleRemoveKey}
-                  className="text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Remove Key</span>
-                </button>
-              )}
-            </div>
-
-            <p className="text-neutral-400 leading-relaxed text-[11px]">
-              Paste your personal Google Gemini API key to enable live AI responses. Keys are stored solely in your browser's private <code className="text-amber-300">localStorage</code>.
-            </p>
-
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <input
-                  type={showKeySecret ? 'text' : 'password'}
-                  value={inputKey}
-                  onChange={(e) => setInputKey(e.target.value)}
-                  placeholder={apiKey ? '••••••••••••••••••••••••••••••••' : 'AIzaSy...'}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-amber-400 pr-9 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowKeySecret(!showKeySecret)}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
-                >
-                  {showKeySecret ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSaveKey}
-                disabled={!inputKey.trim() || keyStatus === 'validating'}
-                className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 font-bold text-xs transition-colors disabled:opacity-50 cursor-pointer"
-              >
-                {keyStatus === 'validating' ? 'Verifying...' : 'Save Key'}
-              </button>
-            </div>
-
-            {keyStatus === 'invalid' && (
-              <p className="text-red-400 text-[11px] flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                Invalid API key or network error. Please double-check the key.
-              </p>
-            )}
-          </div>
-        )}
 
         {/* CHAT MESSAGES VIEWPORT */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
