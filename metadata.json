@@ -1,0 +1,6 @@
+{
+  "name": "LUMORA — Memories in Motion",
+  "description": "A cinematic digital photo album and memory journal with Ken Burns slideshows and atmospheric music.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
